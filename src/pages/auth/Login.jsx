@@ -1,6 +1,9 @@
 import { useState } from "react";
-import {link} from "react-router-dom";
 import {Eye, EyeOff, Sun, Moon} from "lucide-react";
+import { Link } from "react-router-dom";
+import AuthLayout from "../../componets/auth/AuthLayout";
+import { useTheme } from "../../componets/useTheme";
+
 export default function Login(){
  const [showPassword, setShowPassword] = useState(false);
  const {theme, toggleTheme} = useTheme();
@@ -24,9 +27,9 @@ export default function Login(){
                 <input type="email" required placeholder="newtsofts@example.com" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-indigo-900"/>
             </div>
             <div>
-                <div classNaame="mb-2 flex justify-between">
+                <div className="mb-2 flex justify-between">
                     <label className="text-sm font-medium">Password</label>
-                    <button type="button" className="text-sm font-indigo-600 hover:underline">Forgot Password?</button>
+                    <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">Forgot Password?</Link>
                 </div>
                 <div className="relative">
                     <input type={showPassword ? "text" : "password"} required placeholder="Enter your password" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-12 outline-none dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:bg-slate-900
@@ -41,7 +44,7 @@ export default function Login(){
             </button>
         </form>
         <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">Don`t have an Account? {" "}
-        <link to="/register" className="font-semibold text-indigo-600 hover:underline">Create Account</link></p>
+        <Link to="/Register" className="font-semibold text-indigo-600 hover:underline">Create Account</Link></p>
       </AuthLayout>
  );
  
