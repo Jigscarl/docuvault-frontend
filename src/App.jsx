@@ -6,6 +6,7 @@ import {ThemeProvider} from "./componets/ThemeProvider";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Documents from "./pages/dashboard/Documents";
+import UploadDocument from "./pages/dashboard/UploadDocument";
 
 export default function App(){
   return (
@@ -19,6 +20,7 @@ export default function App(){
           <Route element ={<DashboardLayout/>}>
             <Route path="/dashboard" element={<Dashboard/>}/>
             <Route path="/documents" element={<Documents/>}/>
+            <Route path="upload" element={<UploadDocument/>}/>
           </Route>
           <Route path="/dashbord" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />

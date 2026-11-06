@@ -1,4 +1,5 @@
 import {Files,HardDrive,Users,Clock,Upload,ArrowUpRight,FileText,FileImage,FileSpreadsheet,File} from "lucide-react";
+import {useNavigate} from "react-router-dom"
 
 const stats = [
     {
@@ -68,6 +69,7 @@ const documents = [
 ];
 
 export default  function Dashboard(){
+    const navigate = useNavigate()
     return(
         <div className="space-y-8">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -75,7 +77,7 @@ export default  function Dashboard(){
                     <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
                     <p className="mt-2 text-slate-500 dark:text-slate-400">Welcome back.</p>
                 </div>
-                <button className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700">
+                <button onClick={() => navigate("/upload")} className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700">
                     <Upload size={18}/>
                     Upload Document
                 </button>

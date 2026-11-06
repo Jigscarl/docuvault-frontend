@@ -1,5 +1,6 @@
 import {useMemo, useState} from "react";
 import { Search,Upload,Grid2X2,List,FileText,FileImage,FileSpreadsheet,File,Download,Trash2,Eye,Filter, } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const sampleDocuments = [
     {
@@ -69,6 +70,7 @@ const fileColors = {
 };
 
 export default function Documents(){
+    const navigate = useNavigate();
     const [documents, setDocuments] = useState(sampleDocuments);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All categories");
@@ -96,7 +98,7 @@ export default function Documents(){
                 <h1 className="text-3xl font-bold">All Documents</h1>
                 <p className="mt-2 text-slate-500 dark:text-slate-400">Manage and Organise your documents in one place</p>
             </div>
-            <button onClick={()=> alert("Document Uploaded")} className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white hover:bg:bg-indigo-700">
+            <button onClick={()=> navigate("upload")} className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-medium text-white hover:bg:bg-indigo-700">
                 <Upload size={18}/> Upload Document
             </button>
         </div>
