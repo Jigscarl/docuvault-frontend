@@ -8,6 +8,9 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Documents from "./pages/dashboard/Documents";
 import UploadDocument from "./pages/dashboard/UploadDocument";
 import Folders from "./pages/dashboard/Folders";
+import Favorities from "./pages/dashboard/Favorites";
+import Trash from "./pages/dashboard/Trash";
+import Settings from "./pages/dashboard/Settings";
 
 export default function App(){
   return (
@@ -23,6 +26,9 @@ export default function App(){
             <Route path="/documents" element={<Documents/>}/>
             <Route path="upload" element={<UploadDocument/>}/>
             <Route path="/folders" element={<Folders/>}/>
+            <Route path="/favorites" element={<Favorities/>}/>
+            <Route path="/trash" element={<Trash/>}/>
+            <Route path="/settings" element={<Settings/>}/>
           </Route>
           <Route path="/dashbord" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />

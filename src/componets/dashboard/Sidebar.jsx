@@ -5,7 +5,7 @@ const navigation =[
     {name: "Dashboard", path: "/dashboard", icon: LayoutDashboard},
     {name: "All Documents", path: "/documents", icon: Files},
     {name: "My Folders", path: "/folders", icon: FolderOpen},
-    {name: "Favorities", path: "/favorities", icon: Star},
+    {name: "Favorites", path: "/favorites", icon: Star},
     {name: "Trash", path: "/trash", icon: Trash2},
 
 ];
