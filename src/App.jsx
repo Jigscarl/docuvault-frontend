@@ -11,10 +11,12 @@ import Folders from "./pages/dashboard/Folders";
 import Favorities from "./pages/dashboard/Favorites";
 import Trash from "./pages/dashboard/Trash";
 import Settings from "./pages/dashboard/Settings";
+import { DocumentProvider } from "./context/DocumentContext";
 
 export default function App(){
   return (
      <ThemeProvider>
+      <DocumentProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace/>} />
@@ -34,6 +36,8 @@ export default function App(){
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
+      </DocumentProvider>
      </ThemeProvider>
+     
   );
 }
