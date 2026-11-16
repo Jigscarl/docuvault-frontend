@@ -1,7 +1,8 @@
 import {useState} from "react";
-import { Search,Upload,FileText,FileSpreadsheet,FileImage,File,Star,Trash2,Grid,List } from "lucide-react";
+import { Search,Upload,FileText,FileSpreadsheet,FileImage,File,Star,Trash2,Grid,List,Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocuments } from "../../context/DocumentContext";
+import { downloadFile } from "../../utlls/downloadFile";
 
 function getFileIcon(type){
     switch (type) {
@@ -106,6 +107,9 @@ export default function Documents(){
                                     </td>
                                     <td  className="px-5 py-4">
                                         <div className="flex items-center gap-2">
+                                            <button onClick={() => downloadFile(document.id, document.name)} title="Download" className="rounded-lg p-2 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950">
+                                                <Download size={17} />
+                                            </button>
                                             <button onClick={() => toggleFavorite(document.id)} title="Toggle favorite" className={`rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${document.isFavorite ? "text-amber-500" : "text-gray-400"}`}>
                                                 <Star size={17} fill={document.isFavorite ? "currentColor" : "none"}/>
                                             </button>

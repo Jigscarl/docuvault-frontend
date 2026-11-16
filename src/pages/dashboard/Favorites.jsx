@@ -2,6 +2,7 @@ import {useState} from "react";
 import { useNavigate } from "react-router-dom";
 import {Star, Search,FileText,FileSpreadsheet,FileImage,Download,FolderOpen} from "lucide-react";
 import {useDocuments} from "../../context/DocumentContext";
+import { downloadFile } from "../../utlls/downloadFile";
 
 export default function Favorites(){
     const {favorites, toggleFavorite} =useDocuments();
@@ -64,7 +65,7 @@ export default function Favorites(){
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex justify-end gap-3">
-                                                <button onClick={() => alert("Download functionality comming soon")} title="Download" className="text-gray-400 hover:text-indigo-600">
+                                                <button onClick={() => downloadFile(document.id, document.name)} title="Download" className="text-gray-400 hover:text-indigo-600">
                                                     <Download size={18}/>
                                                 </button>
                                                 <button onClick={()=> toggleFavorite(document.id)} title="Remove from favorites" className="text-yellow-500 hover:text-red-500">
