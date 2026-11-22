@@ -1,12 +1,14 @@
 import {useState} from "react";
 import { useNavigate } from "react-router-dom";
-import {Star, Search,FileText,FileSpreadsheet,FileImage,Download,FolderOpen} from "lucide-react";
+import {Star, Search,FileText,FileSpreadsheet,FileImage,Download,FolderOpen,Eye} from "lucide-react";
 import {useDocuments} from "../../context/DocumentContext";
 import { downloadFile } from "../../utlls/downloadFile";
+import DocumentPreview from "../../componets/dashboard/DocumentPreview";
 
 export default function Favorites(){
     const {favorites, toggleFavorite} =useDocuments();
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedDocument, setSelectedDocument] = useState(null);
     const navigate = useNavigate();
 
     const filteredFavorities = favorites.filter((document) => document.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -32,7 +34,7 @@ export default function Favorites(){
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full sm:max-w-md">
-                    <Search size={18} className="absolute left-3 top-1/2-translate-y-1/2 text-gray-400"/>
+                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
                     <input type="text" placeholder="Search favorities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"/>
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -42,14 +44,14 @@ export default function Favorites(){
             {filteredFavorities.length > 0 ? (
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                        <table className="w-full min-w-[700px] text-left text-sm">
                             <thead className="bg-gray-50 text-gray-500 dark:bg-gray-700/50 dark:text-gray-300">
                               <tr>
                                 <th className="px-6 py-4 font-medium">Document</th>
                                 <th className="px-6 py-4 font-medium">Category</th>
                                 <th className="px-6 py-4 font-medium">Size</th>
                                 <th className="px-6 py-4 font-medium">Modified</th>
-                                <th className="px-6 py-4 font-medium">Action</th>
+                                <th className="px-6 py-4 text-right font-medium">Actions</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -63,12 +65,18 @@ export default function Favorites(){
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-end gap-3">
-                                                <button onClick={() => downloadFile(document.id, document.name)} title="Download" className="text-gray-400 hover:text-indigo-600">
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{document.category}</td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{document.size}</td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{document.modified}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="inline-flex items-center justify-end gap-3">
+                                                <button onClick={() => downloadFile(document.id, document.name)} title="Download" aria-label={`Download ${document.name}`} className="text-gray-400 hover:text-indigo-600">
                                                     <Download size={18}/>
                                                 </button>
-                                                <button onClick={()=> toggleFavorite(document.id)} title="Remove from favorites" className="text-yellow-500 hover:text-red-500">
+                                                <button onClick ={() => setSelectedDocument(document)} title="Preview" aria-label={`Preview ${document.name}`} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-gray-800">
+                                                    <Eye size={18}/>
+                                                </button>
+                                                <button onClick={()=> toggleFavorite(document.id)} title="Remove from favorites" aria-label={`Remove ${document.name} from favorites`} className="text-yellow-500 hover:text-red-500">
                                                     <Star size={18}/>
                                                 </button>
                                             </div>
@@ -92,6 +100,13 @@ export default function Favorites(){
                         Browse Documents
                     </button>
                 </div>
+            )}
+            {selectedDocument && (
+                <DocumentPreview
+                    key={selectedDocument.id}
+                    document={selectedDocument}
+                    onClose={() => setSelectedDocument(null)}
+                />
             )}
         </div>
     )

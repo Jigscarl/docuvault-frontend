@@ -11,12 +11,12 @@ import Folders from "./pages/dashboard/Folders";
 import Favorities from "./pages/dashboard/Favorites";
 import Trash from "./pages/dashboard/Trash";
 import Settings from "./pages/dashboard/Settings";
-import { DocumentProvider } from "./context/DocumentContext";
+import FolderDetails from "./pages/dashboard/FolderDetails";
+import Activity from "./pages/dashboard/Activity";
 
 export default function App(){
   return (
      <ThemeProvider>
-      <DocumentProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace/>} />
@@ -31,12 +31,13 @@ export default function App(){
             <Route path="/favorites" element={<Favorities/>}/>
             <Route path="/trash" element={<Trash/>}/>
             <Route path="/settings" element={<Settings/>}/>
+            <Route path="/folders/:id" element={<FolderDetails/>}/>
+            <Route path="/activity" element={<Activity/>}/>
           </Route>
           <Route path="/dashbord" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
-      </DocumentProvider>
      </ThemeProvider>
      
   );

@@ -1,83 +1,94 @@
-import {useEffect,useState} from "react";
-import {X, Download,Loader2,FileText,AlertCircle} from "lucide-react";
+import { useEffect, useState } from "react";
+import {X, Download, Loader2, FileText} from "lucide-react";
 import documentApi from "../../api/documentApi";
 import {downloadFile} from "../../utlls/downloadFile";
-export default function DocumentPreview({documnet,  onClose}){
+
+export default function DocumentPreview({document, onClose}){
     const [previewUrl, setPreviewUrl] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(()=>{
+    useEffect(() => {
         let active = true;
-        async  function loadPreview(){
+
+        async function loadPreview(){
             try{
                 setLoading(true);
                 setError("");
+
                 const result = await documentApi.download(document.id);
+                if(!result.url){
+                    throw new Error("Preview URL unavailable.");
+                }
                 if(active){
                     setPreviewUrl(result.url);
                 }
-            }
-            catch (err){
+            } catch (err){
+                console.error("Loading document preview failed:", err);
                 if(active){
-                    setError(err.response?.data?.message || "Unable to load document Preview.");
+                    setError("Unable to load this document.");
                 }
             }
-            finally {
+            finally{
                 if(active) setLoading(false);
             }
         }
-        loadPreview();
-        return () =>{active = false}
 
+        loadPreview();
+        return ()=>{
+            active = false;
+            active = false;
+        };
     }, [document.id]);
 
-    const isPdf = document.contentType === "application/pdf";
-    const isImage = ["image/jpeg", "image/png"].includes(document.contentType);
+    const contentType = (document.contentType || "").toLowerCase();
+    const isPdf = contentType === "application/pdf";
+    const isImage = contentType.startsWith("image/");
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-6">
-            <div className="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
-                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <FileText className="shrink-0 text-indigo-600"/>
-                        <div className="min-w-0">
-                            <h2 className="truncate font-semibold text-gray-900 dark:text-white">{document.name}</h2>
-                            <p className="text-xs text-gray-500">{document.category}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
+                <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
+                    <div className="flex items-center gap-3">
+                        <FileText className="text-indigo-600"/>
+                        <div>
+                            <h2 className="font-semibold text-gray-900 dark:text-white">{document.name}</h2>
+                            <p className="text-xs text-gray-500">Document preview</p>
                         </div>
                     </div>
-                    <div className="flex shrink-0 items-ceneter gap-2">
-                        <button onClick = {()=> downloadFile(document.id,document.name)} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">
-                            <Download size = {16}/>
-                            <span className="hidden sm:inline">Download</span>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => downloadFile(document.id, document.name)} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white">
+                            <Download size={16}/>
                         </button>
-                        <button onClick={onClose} className = "rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label = "Close preview"><X size={20}/></button>
+                        <button onClick={onClose} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <X size={20}/>
+                        </button>
                     </div>
                 </div>
-                <div className="flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-3 dark:bg-gray-950">
+
+                <div className="flex min-h-[400px] flex-1 items-center justify-center overflow-auto bg-gray-100 dark:bg-gray-950">
                     {loading && (
-                        <div className="flex flex-col items-center gap-3 text-gray-500">
-                            <Loader2 className="animate-spin" size={32}/>
-                             Loading preview...
-                        </div>
+                        <Loader2 className="animate-spin text-indigo-600" size={32}/>
                     )}
-                    {!loading && error && (
-                        <div className="flex flex-col items-center gap-3 text-center text-red-500">
-                            <AlertCircle size={36}/>
-                            <p>{error}</p>
-                        </div>
+                    {error && (
+                        <p className="text-red-500">{error}</p>
+                    )}
+                    {!loading && !error && previewUrl && isPdf && (
+                        <iframe src={previewUrl} title={document.name} className="h-[70vh] w-full"/>
                     )}
                     {!loading && !error && previewUrl && isImage && (
-                        <img src={previewUrl} alt={document.name} className="max-h-full max-w-full rounded-lg object-contain"/>
+                        <img src={previewUrl} alt={document.name} className="max-h-[70vh] max-w-full object-contain"/>
                     )}
-                    {!loading && !error && previewUrl && !isPdf && !isImage && (
-                        <div className="text-center">
-                            <FileText size={48} className="mx-auto mb-3 text-indigo-500"/>
-                            <p className="font-medium text-gray-800 dark:text-white">Preview is not available for this file type</p>
-                            <p className="mt-2 text-sm text-gray-500">Download the document to open it.</p>
+
+                    {!loading && !error && !isPdf && !isImage && (
+                        <div className="p-8 text-center">
+                            <FileText size={48} className="mx-auto mb-4 text-indigo-500"/>
+                            <p className="font-medium text-gray-800 dark:text-white">Preview not supported for this file type</p>
+                            <p className="mt-2 text-sm text-gray-500">Download the document to open it</p>
                         </div>
                     )}
-                </div>
+            </div>
             </div>
         </div>
-    )
+    );
 }

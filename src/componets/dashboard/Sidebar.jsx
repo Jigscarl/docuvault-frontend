@@ -1,10 +1,11 @@
 import {NavLink} from "react-router-dom";
-import {LayoutDashboard,Files,FolderOpen,Star,Trash2,Settings,ShieldCheck,X} from "lucide-react";
+import {LayoutDashboard,Files,FolderOpen,Star,Trash2,Settings,ShieldCheck,X,Activity, History} from "lucide-react";
 
 const navigation =[
     {name: "Dashboard", path: "/dashboard", icon: LayoutDashboard},
     {name: "All Documents", path: "/documents", icon: Files},
     {name: "My Folders", path: "/folders", icon: FolderOpen},
+    {name: "Activity History", path:"/activity",icon:History},
     {name: "Favorites", path: "/favorites", icon: Star},
     {name: "Trash", path: "/trash", icon: Trash2},
 

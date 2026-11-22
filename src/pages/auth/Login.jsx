@@ -6,6 +6,8 @@ import AuthLayout from "../../componets/auth/AuthLayout";
 import { useTheme } from "../../componets/useTheme";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { supabase } from "../../lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 const LoginSchema = z.object({
     email: z.string().trim().email("Please enter a valid email address"),
@@ -13,6 +15,9 @@ const LoginSchema = z.object({
 });
 
 export default function Login() {
+ const navigate = useNavigate();
+ const [loading, setLoading] = useState(false);
+ const [serverError, setServerError] = useState("");   
  const [showPassword, setShowPassword] = useState(false);
  const { theme, toggleTheme } = useTheme();
  const {
@@ -23,9 +28,25 @@ export default function Login() {
     resolver: zodResolver(LoginSchema),
  });
 
- const onSubmit = async (data) => {
-    console.log("Login data:", data);
-    alert("Validation successful");
+ const onSubmit = async (values) => {
+    setLoading(true);
+    setServerError("");
+    try{
+        const {data, error} = await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password,
+        });
+        if(error){
+            throw error;
+        }
+        if(!data.session){
+            throw new Error("Unable to establish your login session.");
+        }
+        navigate("/dashboard", {replace: true});
+    } catch (error){
+        setServerError(error.message || "Login failed. please try again.");
+    }
+    finally{setLoading(false);}
  };
  return (
     <AuthLayout
@@ -55,8 +76,9 @@ export default function Login() {
                 </div>
                 {errors.password && <p id="login-password-error" className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
-                Sign In 
+            {serverError && (<div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">{serverError}</div>)}
+            <button type="submit" disabled={loading} className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
+                {loading ? "Signing in..." : "Sign In"}
             </button>
         </form>
         <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">Don`t have an Account? {" "}

@@ -1,8 +1,23 @@
 import {useTheme} from "../useTheme";
-import{Bell,Sun,Moon,Menu,Search,Upload} from "lucide-react";
+import{Bell,Sun,Moon,Menu,Search,Upload, LogOut} from "lucide-react";
+import {useNavigate} from "react-router-dom";
+import {useAuth} from "../../context/AuthContext";
+
 
 export default function Topbar({onMenuClick}){
     const {theme, toggleTheme } = useTheme();
+    const {user, signOut} = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            navigate("/login", {replace: true});
+        } catch (error){
+            console.error("Logout failed:",error);
+            alert("Unable to sign out. Please try again.");
+        }
+    };
 
     return (
         <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
@@ -29,7 +44,12 @@ export default function Topbar({onMenuClick}){
                 </button>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400">
                     U
+                    <span className="text-sm text-gray-500">{user?.email}</span>
                 </div>
+
+                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/50">
+                 <LogOut size={18}/> Sign Out
+                </button>
 
             </div>
         </header>

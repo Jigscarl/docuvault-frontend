@@ -1,11 +1,57 @@
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import { Trash2,RotateCcw,Search,FileText,FileSpreadsheet,FileImage,AlertTriangle,FolderOpen } from "lucide-react";
 import {useDocuments} from "../../context/DocumentContext"
+import documentApi from "../../api/documentApi";
+
 
 export default function Trash(){
-    const {trash, restoreDocument,permanentlyDelete,emptyTrash} = useDocuments();
+    const {trash, restoreDocument} = useDocuments();
     const [searchTerm, setSearchTerm] = useState("");
     const filteredTrash = trash.filter((document) => document.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const [trsh, setTrash] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    const fetchTrash = async() =>{
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await documentApi.getTrash();
+            setTrash(data);
+        } catch (err){
+            console.error(err);
+            setError("Unable to load Trash.");
+        }
+        finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {fetchTrash();}, []);
+
+    const handleRestore = async (id) => {
+        try{
+            await documentApi.restore(id);
+            await fetchTrash();
+        } catch (err){
+            alert("Unable to restore document.");
+        }
+    };
+
+    const handlePermanentDelete = async (id) => {
+        if (!window.confirm("Permanently delete this document?")){
+            return;
+        }
+
+        try {
+            await documentApi.permanentlyDelete(id);
+            await fetchTrash();
+        } catch (err){
+             alert("Unable to permanently delete document.");
+        }
+    };
 
     function getFileIcon(type){
         switch(type){
@@ -19,20 +65,19 @@ export default function Trash(){
                 return <FileText className="text-blue-500" size={22}/>            
         }
     }
-    function handleEmptyTrash(){
-        if(trash.length === 0 ) return;
-        const confirmed = window.confirm("Are you sure you want to parmanently delete all documents in Trash?");
-        if(confirmed){
-            emptyTrash();
-        }
-    }
+    const handleEmptyTrash = async () => {
+        if(trash.length === 0) return;
+        const confirmed = window.confirm("Are you sure you want to permanently delete all documents in Trash?");
+        if(!confirmed) return;
 
-    function handlePermanentDelete(id){
-        const confirmed = window.confirm("Permanently delete this document?");
-        if (confirmed){
-            permanentlyDelete(id);
+        try {
+            await Promise.all(trash.map((document) => documentApi.permanentlyDelete(document.id)));
+            await fetchTrash();
+        } catch (err){
+            console.error(err);
+            alert("Unable to empty Trash.");
         }
-    }
+    };
 
     return (
         <div className="space-y-6">

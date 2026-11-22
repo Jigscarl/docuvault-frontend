@@ -12,13 +12,22 @@ const documentApi = {
         return response.data;
     },
 
-    Upload: async (File,metadata = {}) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("category", metadata.category || "Uncategorized");
+   upload: async(file, metadata = {}) =>{
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", metadata.Category || "Uncategorized");
+      formData.append("description", metadata.description || "");
 
-        formData.append("description", metadata.description || "");
-        const response = await api.post("/documents", formData);
+      if(metadata.folderId){
+        formData.append("folderId", metadata.folderId);
+      }
+      const response = await api.post("/documents", formData);
+      return response.data;
+   },
+    
+
+    download: async(id) => {
+        const response = await api.get(`/documents/${id}/download`);
         return response.data;
     },
 
@@ -34,7 +43,29 @@ const documentApi = {
     toggleFavorite: async(id) => {
         const response = await api.patch(`/documents/${id}/favorite`);
         return response.data;
-    }
+    },
+
+    getTrash: async ()=> {
+        const response = await api.get("/documents/trash");
+        return response.data;
+    },
+
+    permanentlyDelete: async(id) => {
+        const response = await api.delete(`/documents/${id}/permanent`);
+        return response.data;
+    },
+
+    moveToTrash: async (id) => {
+        const response = await api.delete(`/documents/${id}`);
+        return response.data;
+    },
+
+    moveToFolder: async (documentId, folderId) => {
+        const response = await api.patch(`/documents/${documentId}/folder`, {folderId});
+        return response.data;
+    },
+
+
 }
 
 export default documentApi;

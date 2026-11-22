@@ -1,10 +1,13 @@
-import {useRef, useState} from "react";
+import {useRef, useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {UploadCloud,FileText,FileSpreadsheet,FileImage,X,ArrowLeft, CheckCircle} from "lucide-react";
 import {useDocuments} from "../../context/DocumentContext";
+import documentApi from "../../api/documentApi";
+import folderApi from "../../api/folderApi";
 
 export default function UploadDocument(){
     const navigate = useNavigate();
+    const {fetchDocuments} = useDocuments();
     const {addDocuments} = useDocuments();
     const fileInputRef = useRef(null);
     const [files, setFiles] = useState([]);
@@ -12,6 +15,11 @@ export default function UploadDocument(){
     const [category, setCategory] = useState("Uncategorized");
     const [description,setDescription] = useState("");
     const [uploading, setUploading] = useState(false);
+    const [uploadError,setUploadError] = useState("");
+    const [uploadSuccess, setUploadSuccess] = useState("")
+    const [folders, setFolders] = useState([]);
+    const [folderId, setFolderId] = useState("");
+    const [foldersLoading, setFoldersLoading] = useState(true);
 
     const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -24,6 +32,21 @@ export default function UploadDocument(){
         "image/jpeg",
         "image/png",
     ];
+
+    useEffect(() =>{
+        const loadFolders = async() => {
+            try{
+                const data = await folderApi.getAll();
+                setFolders(data);
+            } catch(error){
+                console.error("Failed to load folders:", error);
+            } finally{
+                setFoldersLoading(false);
+            }
+            
+        };
+        loadFolders();
+    }, []);
 
     function handleFiles(selectedFiles){
         setError("");
@@ -73,19 +96,27 @@ export default function UploadDocument(){
         return <FileText className="text-blue-500" size={24}/>
     }
 
-    function handleUpload(){
-        if(files.length === 0){
-            setError("Please select at least one document.");
+    const handleUpload = async() => {
+        if(files || files.length === 0 ){
+            setUploadError("Please select at least one document.");
             return;
         }
         setUploading(true);
-        setError("");
-
-        addDocuments(files, {category,description});
-
-        setUploading(false);
-        navigate("/documents");
-    }
+        setUploadError("");
+        setUploadSuccess("");
+        try{
+            for(const file of files){
+                await documentApi.upload(file, {category, description});
+            }
+            await fetchDocuments();
+            setUploadSuccess("Documents uploaded successfully!");
+            setTimeout(()=>{navigate("/documents");}, 1200);
+        } catch(error) {
+            console.error("Upload failed:", error);
+            setUploadError(error.response?.data?.message || error.response.data?.title || error.message || "Document upload failed.");
+        }
+        finally {setUploading(false);}
+    };
 
     return (
         <div className="mx-auto max-w-4xl space-y-6">
@@ -146,6 +177,18 @@ export default function UploadDocument(){
                             <option value="Academic">Academic</option>
                         </select>
                     </div>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Destination folder</Label>
+                        <select value={folderId} onChange={(e) => setFolderId(e.target.value)} disabled={foldersLoading} className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                            <option value="">No folder (Unassigned)</option>
+                            {folderApi.map((folder) => (
+                                <option key = {folder.id} value={folder.id}>{folder.name}</option>
+                            ))}
+                        </select>
+                        {foldersLoading && (
+                            <p className="text-xs text-gray-500">Loading folders...</p>
+                        )}
+                    </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                         <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} placeholder="Enter a short description of these documents..." 
@@ -157,9 +200,14 @@ export default function UploadDocument(){
                 <button onClick={()=> navigate("/documents")} className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
                     Cancel
                 </button>
-                <button onClick={handleUpload} disabled={uploading || files.length === 0} className="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
-                    <CheckCircle size={18}/>
-                    {uploading ? "Uploading..." : `Add ${files.length} Document(s)`}
+                {uploadError && (
+                    <p className="mt-3 text-sm text-red-500">{uploadError}</p>
+                )}
+                {uploadSuccess && (
+                    <p className="mt-3 text-sm text-green-600">{uploadSuccess}</p>
+                )}
+                <button type="button" onClick={handleUpload} disabled={uploading || !files?.length} className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+                    {uploading ? "uploading..." : "Upload Documents"}
                 </button>
             </div>
         </div>

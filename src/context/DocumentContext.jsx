@@ -1,163 +1,75 @@
-import {createContext, useContext, useState} from "react";
+import {createContext, useCallback, useContext,useEffect, useState} from "react";
+
+import documentApi from "../api/documentApi";
+import { useAuth } from "./AuthContext";
 
 const DocumentContext = createContext(null);
 
-const initialDocument = [
-    {
-        id: 1,
-        name: "Project Propoasal.pdf",
-        type:"pdf",
-        category: "Projects",
-        size: "2.4 MB",
-        modified: "Today",
-        isFavorite: true,
-        deletedAt: null,
-    },
-    {
-        id:2,
-        name: "Financial Report.xlsx",
-        type: "excel",
-        category: "Finance",
-        size: "1.8 MB",
-        modified: "Yesterday",
-        isFavorite: false,
-        deletedAt: null,
-    },
-    {
-        id: 3,
-        name: "Company profile.docx",
-        type: "Word",
-        category: "Work",
-        size: "850 KB",
-        modified: "2 days ago",
-        isFavorite: true,
-        deletedAt: null,
-    },
-    {
-        id: 4,
-        name: "Old Budget.xlsx",
-        type: "excel",
-        category: "Finance",
-        size: "1.2 MB",
-        modified: "Last week",
-        isFavorite: false,
-        deletedAt: new Date().toISOString(),
+export function DocumentProvider({children}){
+    const [documents, setDocuments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const[error, setError] = useState("");
+    const {user, loading: authLoading} = useAuth();
 
-    },
+    const fetchDocuments = useCallback(async () => {
+        try{
+            setLoading(true);
+            setError("");
+            
+            const data = await documentApi.getAll();
 
-   ];
-
-    export function DocumentProvider({children}){
-        const [documents, setDocuments] = useState(initialDocument);
-
-        function addDocuments(files, metadata = {}){
-            const newDocuments = files.map((file) => ({
-                id: Date.now() + Math.random(),
-                name:file.name,
-                type: getFileType(file),
-                category: metadata.category || "Uncategorised",
-                size: formatFileSize(file.size),
-                modified: "just now",
-                description:metadata.description || "",
-                isFavorite: false,
-                deletedAt: null,
-                file,
-
-            }));
-            setDocuments((current) => [
-                ...newDocuments,
-                ...current,
-            ]);
+            setDocuments(data);
+        } catch(err){
+            console.error("Fetching documents failed:" , err);
+            setError(
+                err.response?.data?.message ||
+                (err.request
+                    ? "Could not reach the documents API. Start the backend or set VITE_API_BASE_URL to its reachable URL."
+                    : err.message || "Unable to load your documents.")
+            );
+        } finally {
+            setLoading(false);
         }
+    }, []);
 
-        function toggleFavorite(id){
-            setDocuments((current) => current.map((document) => document.id === id ? {
-                ...document,
-                isFavorite: !document.isFavorite,
-            }
-        : document
-         ));
-        }
+    useEffect(() => {
+        if(!authLoading && user) void Promise.resolve().then(fetchDocuments);
+    }, [authLoading, user, fetchDocuments]);
 
-        function moveToTrash(id){
-            setDocuments((current) => current.map((document) => document.id === id ? {
-                ...document,
-                deletedAt: new Date().toISOString(),
-            } : document));
-        }
+    const visibleDocuments = user ? documents : [];
+    const value = {
+        documents: visibleDocuments,
+        favorites: visibleDocuments.filter((document) => document.isFavorite),
+        trash: visibleDocuments.filter((document) => document.deletedAt),
+        loading: authLoading || (user ? loading : false),
+        error: user ? error : "",
+        fetchDocuments,
+        setDocuments,
+        toggleFavorite: async (id) => {
+            await documentApi.toggleFavorite(id);
+            await fetchDocuments();
+        },
+        moveToTrash: async (id) => {
+            await documentApi.delete(id);
+            await fetchDocuments();
+        },
+        restoreDocument: async (id) => {
+            await documentApi.restore(id);
+            await fetchDocuments();
+        },
+    };
 
-        function restoreDocument(id){
-            setDocuments((current) => current.map((document) => document.id === id ? {
-                ...document,
-                deletedAt: null,
-            } : document));
-        }
+    return (
+        <DocumentContext.Provider value = {value}>{children}</DocumentContext.Provider>
+    );
+}
 
-        function permanentlyDelete(id){
-            setDocuments((current) => current.filter((document) => document.id !== id));
-        }
+export function useDocuments(){
+    const context = useContext(DocumentContext);
 
-        function emptyTrash(){
-            setDocuments((current) => current.filter((document) => !document.deletedAt))
-        }
+    if(!context){
+        throw new Error("useDocuments must be used inside DocumentProvider");
+    }
 
-        const activeDocuments = documents.filter((document) => !document.deletedAt);
-        const favoriteDocuments = activeDocuments.filter((document) => document.isFavorite);
-        const trashedDocuments = documents.filter((document)=> document.deletedAt);
-
-        const value = {
-            documents: activeDocuments,
-            favorites: favoriteDocuments,
-            trash: trashedDocuments,
-            addDocuments,
-            toggleFavorite,
-            moveToTrash,
-            restoreDocument,
-            permanentlyDelete,
-            emptyTrash,
-        };
-
-        return (
-            <DocumentContext.Provider value={value}>
-                {children}
-            </DocumentContext.Provider>
-        );
-
-        }
-
-        // This context hook intentionally shares the provider module.
-        // eslint-disable-next-line react-refresh/only-export-components
-        export function useDocuments(){
-            const context = useContext(DocumentContext);
-            if (!context){
-                throw new Error("useDocuments must be used inside DocumentProvider")
-            }
-            return context;
-        }
-
-        function getFileType(file){
-            if (file.type === "application/pdf") return "pdf";
-
-            if(
-                file.type.includes("spreadsheet") || file.type.includes("excel")
-            ){
-                return "excel";
-            }
-
-            if(file.type.includes("word") || file.type.includes("document")){
-                return "word";
-            }
-
-            if (file.type.startsWith("image/")) return "image";
-
-            return "file";
-        }
-
-        function formatFileSize(bytes){
-            if (bytes < 1024) return `${bytes} B`;
-            if(bytes < 1024 * 1024){
-                return `${(bytes/1024).toFixed(1)} KB`;
-            }
-
-            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-        }
+    return  context;
+}
