@@ -4,6 +4,7 @@ import {Files, Folder, Star, HardDrive,Upload,ArrowRight,FileText,FileImage,File
 import documentApi from "../../api/documentApi";
 import folderApi from "../../api/folderApi";
 import activityApi from "../../api/activityApi";
+import CategoryBreakdown from "./categoryBreakdown";
 
 const formatFileSize = (bytes = 0) => {
     if (!bytes || bytes <= 0 ) return "0 B";
@@ -373,6 +374,9 @@ export default function Dashboard(){
                             );
                         })}
                     </div>
+                </div>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <CategoryBreakdown documents={documents}/>
                 </div>
             </div>
         </div>
