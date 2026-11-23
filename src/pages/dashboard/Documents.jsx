@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import { Search,Upload,FileText,FileSpreadsheet,FileImage,File,Star,Trash2,Grid,List,Download,Eye, FolderInput, Info, X ,Calender,FolderOpen,HardDrive,Clock } from "lucide-react";
+import { Search,Upload,FileText,FileSpreadsheet,FileImage,File,Star,Trash2,Grid,List,Download,Eye, FolderInput, Info, X ,Calendar,FolderOpen,HardDrive,Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocuments } from "../../context/DocumentContext";
 import { downloadFile } from "../../utlls/downloadFile";
@@ -520,7 +520,7 @@ export default function Documents(){
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
                                    <span className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Calender size={17}/>
+                                    <Calendar size={17}/>
                                     Uploaded
                                    </span>
                                    <span className="text-sm text-gray-900 dark:text-white">
@@ -563,7 +563,7 @@ export default function Documents(){
 
                         <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                             <button onClick={()=>{
-                                setPreviewDocument(detailsDocument);
+                                setSelectedDocument(detailsDocument);
                                 setDetailsDocument(null);
                             }} className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700">
                                 Preview document
