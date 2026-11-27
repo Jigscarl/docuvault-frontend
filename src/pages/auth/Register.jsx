@@ -3,6 +3,7 @@ import {useForm} from "react-hook-form";
 import {Link} from "react-router-dom";
 import {Eye, EyeOff} from "lucide-react";
 import AuthLayout from "../../componets/auth/AuthLayout";
+import {useAuth} from "../../context/AuthContext";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {supabase} from "../../lib/supabase";
@@ -16,6 +17,7 @@ const registerSchema = z.object({
 });
 
 export default function Register(){
+    const {syncProfile} = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState("");
@@ -29,6 +31,7 @@ export default function Register(){
         setLoading(true);
         setServerError("");
         setSuccessMessage("");
+        let accountCreated = false;
         try{
             const {data, error}  = await supabase.auth.signUp({
                 email: values.email,
@@ -42,13 +45,18 @@ export default function Register(){
             if (error){
                 throw error;
             }
+            accountCreated = true;
             if(data.session){
+                await syncProfile(values.fullName);
                 setSuccessMessage("Account created successfully.");
             } else {
                 setSuccessMessage("Account created, Please check your email to verify your account.");
             }
         } catch (error){
-            setServerError(error.message || "Registration failed.");
+            const message = error.response?.data?.message || error.message || "Registration failed.";
+            setServerError(accountCreated
+                ? `Your account was created, but its Docuvault profile could not be saved: ${message}`
+                : message);
         }
         finally {
             setLoading(false);

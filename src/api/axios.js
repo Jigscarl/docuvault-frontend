@@ -1,6 +1,5 @@
 import axios from "axios";
 import { supabase } from "../lib/supabase";
-import { promise } from "zod";
 
 const api = axios.create({
     baseURL:
@@ -24,7 +23,7 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => promise.reject(error)
+    (error) => Promise.reject(error)
 );
 
 export default api;

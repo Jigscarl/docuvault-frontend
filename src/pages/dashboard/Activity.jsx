@@ -195,7 +195,7 @@ export default function Activity(){
                             <Star size={18} className="text-amber-600 dark:text-amber-400"/>
                         </div>
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{summaryLoading ? "..." : summary?.totalFavorities ?? o}</h3>
+                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{summaryLoading ? "..." : summary?.totalFavorites ?? 0}</h3>
                     <p className="mt-2 text-xs text-gray-400">Favorite actions</p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
@@ -215,7 +215,7 @@ export default function Activity(){
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review and filter your activity history</p>
                 </div>
-                <div className="flex flex-col gap-3 border-b border-gray-200 p-4 dark:border-gray-800 xl:flex-row xl:items-cneter">
+                <div className="flex flex-col gap-3 border-b border-gray-200 p-4 dark:border-gray-800 xl:flex-row xl:items-center">
                     <div className="relative min-w-0 flex-1">
                         <Search size={17} className="absolute left-3 top-1/2-translate-y-1/2 text-gray-400"/>
                         <input type="text" value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1)}} placeholder="Search activities..."
@@ -223,7 +223,7 @@ export default function Activity(){
                     </div>
                     <select value={filter} onChange={(e) => {setFilter(e.target.value); setCurrentPage(1)}} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         <option value="all">All actions</option>
-                        <optiom value="Uploaded">Uploaded</optiom>
+                        <option value="Uploaded">Uploaded</option>
                         <option value="Favorited">Favorited</option>
                         <option value="Unfavorited">Unfavorited</option>
                         <option value="Moved">Moved</option>
@@ -235,14 +235,14 @@ export default function Activity(){
                     <select value={dateFilter} onChange={(e) => {
                         setDateFilter(e.target.value);
                         setCurrentPage(1);
-                    }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-indigo-500 dark:border-gray-700 ouline-none dark:bg-gray-800 dark:text-gray-200">
+                    }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         <option value="all">All time</option>
                         <option value="7">Last 7 days</option>
                         <option value="30">Last 30 days</option>
                         <option value="90">Last 90 days</option>
                         <option value="custom">Custom range</option>
                     </select>
-                    <button onClick={() => fetchActivities()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 diasbled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                    <button onClick={() => fetchActivities()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                         <RefreshCcw size={16} className={loading ? "animate-spin" : ""}/>
                         Refresh
                     </button>
@@ -253,7 +253,7 @@ export default function Activity(){
                             <label className="mb-1 block text-xs font-medium text-gray-500">
                                 Start Date
                             </label>
-                            <input type="date" value={customEndDate} onChange={(e) => {
+                            <input type="date" value={customStartDate} onChange={(e) => {
                                 setCustomStartDate(e.target.value);
                                 setCurrentPage(1)
                             }} className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"/>
@@ -297,34 +297,42 @@ export default function Activity(){
                     )}
                     {!loading && !error && filteredActivities.length > 0 && (
                         <div className="space-y-6">
-                            {paginatedActivities.map((activity) => (
-                                <div key={activity.id} className="relative flex gap-4">
-                                    <div className="relative flex flex-col items-center">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950">
-                                            <FileText size={17} className="text-indigo-600 dark:text-indigo-400"/>
-                                        </div>
-                                        <div className="absolute left-1/2 top-10 h-full w-px-translate-x-1/2 bg-gray-200 dark:bg-gray-800"/>
+                            {Object.entries(groupedActivities).map(([dateGroup, items]) => (
+                                <section key={dateGroup}>
+                                    <h3 className="mb-3 text-sm font-semibold text-gray-500 dark:text-gray-400">{dateGroup}</h3>
+                                    <div className="space-y-3">
+                                        {items.map((activity) => {
+                                            const config = actionConfig[activity.action] || {
+                                                icon: FileText,
+                                                color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+                                            };
+                                            const Icon = config.icon;
+
+                                            return (
+                                                <div key={activity.id} className="relative flex gap-4">
+                                                    <div className="relative flex flex-col items-center">
+                                                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${config.color}`}>
+                                                            <Icon size={17}/>
+                                                        </div>
+                                                        <div className="absolute left-1/2 top-10 h-full w-px -translate-x-1/2 bg-gray-200 dark:bg-gray-800"/>
+                                                    </div>
+                                                    <div className="min-w-0 flex-1 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+                                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-gray-900 dark:text-white">{activity.action}</p>
+                                                                <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">{activity.documentName || "Unnamed document"}</p>
+                                                            </div>
+                                                            <span className="shrink-0 text-xs text-gray-400">{formatDate(activity.createdAt)}</span>
+                                                        </div>
+                                                        {activity.details && (
+                                                            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{activity.details}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div className="min-w-0 flex-1 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
-                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900 dark:text-white">{activity.action}</p>
-                                                <p className="mt-1 braek-words text-sm text-gray-600 dark:text-gray-400">{activity.documentName || "Unamed document"}</p>
-                                            </div>
-                                            <span className="shrink-0 text-xs text-gray-400">
-                                                {formatDate(activity.createdAt)}
-                                            </span>
-                                        </div>
-                                        {activity.details && (
-                                            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{activity.details}</p>
-                                        )}
-                                        <div className="mt-3">
-                                            <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                                                {getDateGroup(activity.createdAt)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                </section>
                             ))}
                         </div>
                     )}
@@ -344,7 +352,7 @@ export default function Activity(){
                                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-gray-700">
                                    Previous
                                 </button>
-                                <span className="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{currentPage} / totalPages</span>
+                                <span className="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{currentPage} / {totalPages}</span>
                                 <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage >= totalPages}
                                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
                                     Next

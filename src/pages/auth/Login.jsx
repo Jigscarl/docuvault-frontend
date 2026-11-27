@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const LoginSchema = z.object({
     email: z.string().trim().email("Please enter a valid email address"),
@@ -16,6 +17,7 @@ const LoginSchema = z.object({
 
 export default function Login() {
  const navigate = useNavigate();
+ const { syncProfile } = useAuth();
  const [loading, setLoading] = useState(false);
  const [serverError, setServerError] = useState("");   
  const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +25,7 @@ export default function Login() {
  const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
  } = useForm({
     resolver: zodResolver(LoginSchema),
  });
@@ -42,9 +44,10 @@ export default function Login() {
         if(!data.session){
             throw new Error("Unable to establish your login session.");
         }
+        await syncProfile(data.session.user.user_metadata?.full_name);
         navigate("/dashboard", {replace: true});
     } catch (error){
-        setServerError(error.message || "Login failed. please try again.");
+        setServerError(error.response?.data?.message || error.message || "Login failed. please try again.");
     }
     finally{setLoading(false);}
  };

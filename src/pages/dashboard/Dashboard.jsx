@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {Files, Folder, Star, HardDrive,Upload,ArrowRight,FileText,FileImage,FileSpreadsheet,File,Clock,Activity,Loader2,RefreshCw, ArrowUpRight, Subtitles} from "lucide-react"
+import {Files, Folder, Star, HardDrive, Upload, FileText, FileImage, FileSpreadsheet, File, Clock, Activity, RefreshCw, ArrowUpRight} from "lucide-react"
 import documentApi from "../../api/documentApi";
 import folderApi from "../../api/folderApi";
 import activityApi from "../../api/activityApi";
 import CategoryBreakdown from "./categoryBreakdown";
+import StorageBreakdown from "./StorageBreakdown";
+import ActivityChart from "./ActivityChart";
+import analyticsApi from "../../api/analyticsApi";
 
 const formatFileSize = (bytes = 0) => {
     if (!bytes || bytes <= 0 ) return "0 B";
 
-    const units = ["8", "KB", "MB", "GB", "TB" ];
+    const units = ["B", "KB", "MB", "GB", "TB" ];
     const index = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`
 };
@@ -55,7 +58,7 @@ const getActivityStyle = (action = "") => {
     }
 
     if (normalized.includes("download")){
-        return {icon:ArrowUpRight, color: "text-amerald-500", bg: "bg-emerald-500/10"}
+        return {icon:ArrowUpRight, color: "text-emerald-500", bg: "bg-emerald-500/10"}
     }
 
     if (normalized.includes("folder") || normalized.includes("mov")){
@@ -65,13 +68,13 @@ const getActivityStyle = (action = "") => {
     return {icon: Activity, color: "text-gray-500", bg: "bg-gray-500/10"};
 };
 
-const StatCard = ({title, value, Subtitle, icon: Icon, color}) => (
+const StatCard = ({title, value, subtitle, icon: Icon, color}) => (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shodow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between">
             <div>
-                <p className="text=sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
                 <h3 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</h3>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{Subtitle}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
             </div>
             <div className={`rounded-xl p-3 ${color}`}><Icon size={21}/></div>
         </div>
@@ -84,9 +87,10 @@ export default function Dashboard(){
     const [documents, setDocuments] = useState([]);
     const [folders, setFolders] = useState([]);
     const [activities, setActivities] = useState([]);
+    const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const loadDashboard = async () => {
+    const loadDashboard = useCallback(async () => {
         setLoading(true);
         setError("");
 
@@ -94,7 +98,7 @@ export default function Dashboard(){
             const results = await Promise.allSettled([
                 documentApi.getAll(),
                 folderApi.getAll(),
-                activityApi.getRecent(5),
+                activityApi.getRecent(100),
             ]);
 
             const [documentResult, folderResult, activityResult] = results;
@@ -103,7 +107,11 @@ export default function Dashboard(){
                 setDocuments(Array.isArray(documentResult.value)? documentResult.value : []);
             } else {
                 console.error ("Documents failed to load:", documentResult.reason);
-                setFolders([]);
+            }
+            if (folderResult.status === "fulfilled"){
+                setFolders(Array.isArray(folderResult.value) ? folderResult.value : []);
+            } else {
+                console.error("Folders failed to load:", folderResult.reason);
             }
             if(activityResult.status === "fulfilled"){
                 setActivities(Array.isArray(activityResult.value)? activityResult.value : []);
@@ -112,7 +120,7 @@ export default function Dashboard(){
                 setActivities([]);
             }
 
-            if (documentResult.status === "rejected" && folderResult.status ===" rejected"){
+            if (documentResult.status === "rejected" && folderResult.status === "rejected"){
                 setError("Unable to load dashboard data. Please try again.")
             }
         } catch (err){
@@ -121,16 +129,17 @@ export default function Dashboard(){
         }finally {
                 setLoading(false)
             }
-     };
-
-     useEffect(() => {
-        loadDashboard();
      }, []);
 
-     const totalDocuments = document.length;
-     const totalFolders = folderApi.length;
-     const totalFavorites = documents.filter((document) => document.isFavorite === true).length;
-     const totalStorage = document.reduce((total, document) => total + (Number(document.sizeBytes) || 0), 0);
+     useEffect(() => {
+        void Promise.resolve().then(loadDashboard);
+     }, [loadDashboard]);
+
+     const totalDocuments = analytics?.totalDocuments?? documents.length;
+     const totalFolders = analytics?.totalFolders ?? folders.length;
+     const totalFavorites = analytics?.totalFavorites ?? documents.filter((document) => document.isFavorite === true).length;
+     const totalStorage = analytics?.totalStorage ?? documents.reduce((total, document) => total + (Number(document.sizeBytes) || 0) , 0);
+
      const recentDocuments = [...documents].sort((a,b) => new Date(b.createdAt || 0 ).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5);
      const stats = [
         {
@@ -163,6 +172,18 @@ export default function Dashboard(){
         },
      ];
 
+     const fetchAnalytics = useCallback(async () => {
+        try {
+            const data = await analyticsApi.getDashboard();
+            setAnalytics(data);
+        } catch (error){
+            console.error("Failed to fetch dashboard analytics:", error);
+        }
+     }, []);
+     useEffect(() => {
+        void Promise.resolve().then(fetchAnalytics);
+     }, [fetchAnalytics]);
+
      return (
         <div className="space-y-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -170,7 +191,7 @@ export default function Dashboard(){
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Here`s an overview of your document workspace</p>
                 </div>
-                <button onClick={() => navigate("/upload")} className="flex items-center justify-center gap-2 rounded=xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700">
+                <button onClick={() => navigate("/upload")} className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700">
                     <Upload size={18}/>
                     Upload Document
                 </button>
@@ -309,7 +330,7 @@ export default function Dashboard(){
 
                                     return (
                                         <div key={activity.id} className="flex gap-3 border-b border-gray-100 py-4 last:border-0 dark:border-gray-800">
-                                            <div className={`h-fit rounded-full p-2 ${activityStyle.bg} $ {activityStyle.color}`}>
+                                            <div className={`h-fit rounded-full p-2 ${activityStyle.bg} ${activityStyle.color}`}>
                                                 <ActivityIcon size={15}/>
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -375,8 +396,12 @@ export default function Dashboard(){
                         })}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                    <CategoryBreakdown documents={documents}/>
+                <div className="grid min-w-0 grid-cols-1 gap-6 xl:col-span-3 xl:grid-cols-2">
+                    <CategoryBreakdown categories={analytics?.categories ?? []}/>
+                    <StorageBreakdown fileTypes={analytics?.fileTypes ?? []}/>
+                </div>
+                <div className="min-w-0 xl:col-span-3">
+                    <ActivityChart dailyUploads={analytics?.dailyUploads ?? []} />
                 </div>
             </div>
         </div>
